@@ -2,7 +2,8 @@ require("dotenv").config({ path: "./.env" });
 const express = require("express");
 const app = express();
 
-
+// db connections
+require("./models/database").connectDatabase()
 
 // logger
 const logger = require("morgan");
