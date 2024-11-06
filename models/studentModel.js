@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs")
 
 const studentModel = new mongoose.Schema(
     {
@@ -15,10 +16,26 @@ const studentModel = new mongoose.Schema(
             minLength : [6 , "Password should have atleast 6 characters"],
             // match
         },
-    
-    },
+    }, 
     {timestamps : true}
 )
+
+
+studentModel.pre("save", function(){
+
+    if(!this.isModified("password")){
+        return;
+    }
+
+    let salt = bcrypt.genSaltSync(10);
+    this.password = bcrypt.hashSync(this.password, salt);
+});
+
+studentModel.methods.comparepassword = function(password){
+    return bcrypt.compareSync(password, this.password);
+};
+
+// to create login we need to create token
 
 const Student = mongoose.model("student", studentModel);
 

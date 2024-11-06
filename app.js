@@ -3,15 +3,19 @@ const express = require("express");
 const app = express();
 
 // db connections
-require("./models/database").connectDatabase()
+require("./models/database").connectDatabase();
 
 // logger
 const logger = require("morgan");
 app.use(logger("tiny"))
 
+// body parser 
+app.use(express.urlencoded({extended:false}));
+
 // routes
 
 app.use('/', require("./routes/indexRouters"));
+
 
 // error handling
 
