@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs")
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const studentModel = new mongoose.Schema(
     {
@@ -36,6 +37,11 @@ studentModel.methods.comparepassword = function(password){
 };
 
 // to create login we need to create token
+studentModel.methods.getjwttoken = function(){
+    return jwt.sign({ id : this._id} , process.env.JWT_SECRET,{
+        expiresIn : process.env.JWT_EXPIRE,
+    })
+}
 
 const Student = mongoose.model("student", studentModel);
 

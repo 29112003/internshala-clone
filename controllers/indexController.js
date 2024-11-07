@@ -1,14 +1,21 @@
 const { catchAsyncErrors } = require("../middlewares/catchAsyncErrors");
 const Student = require("../models/studentModel");
 const ErrorHandler = require("../utils/errorHandler");
+const { sendtoken } = require("../utils/sendToken");
 
 exports.homepage = catchAsyncErrors(async (req, res, next) => {
-  res.json({ message: "this is huihui" });
+  res.json({ message: "suraksikt home page" });
+});
+
+exports.currentUser = catchAsyncErrors(async (req, res, next) => {
+  const student = await Student.findById(req.id).exec();
+  res.json({student})
 });
 
 exports.studentsignup = catchAsyncErrors(async (req, res, next) => {
   const student = await new Student(req.body).save();
-  res.status(201).json(student);
+  sendtoken(student , 201 , res)
+  // res.status(201).json(student);
 });
 
 exports.studentsignin = catchAsyncErrors(async (req, res, next) => {
@@ -25,10 +32,14 @@ exports.studentsignin = catchAsyncErrors(async (req, res, next) => {
   if (!isMatch) {
     return next(new ErrorHandler("Wrong Credientials", 500));
   }
+
+  sendtoken(student , 200 , res)
+
   
-  res.json(student);
+  // res.json(student);
 });
 
 exports.studentsignout = catchAsyncErrors(async (req, res, next) => {
-  res.json({ message: "signout is working" });
+  res.clearCookie("token");
+  res.json({message : "Successfully signout!"});
 });

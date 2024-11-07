@@ -12,6 +12,19 @@ app.use(logger("tiny"))
 // body parser 
 app.use(express.urlencoded({extended:false}));
 
+// session and cookie
+
+const session = require("express-session")
+const cookieParser = require("cookie-parser");
+app.use(session({
+  resave : true,
+  saveUninitialized : true,
+  secret : process.env.EXPRESS_SESSION_SECRET
+}))
+// TO activate cookie 
+// we generate an string in backend and save it broswer and jab tak cookie broswer mai save hai tak person login rahega
+app.use(cookieParser());
+
 // routes
 
 app.use('/', require("./routes/indexRouters"));
