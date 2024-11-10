@@ -25,7 +25,8 @@ exports.sendmail = (req,res,next,url) =>{
             console.log(info);
             return res.status(200).json({
                 message : "mail sent successfully",
-                url
+                url,
+                
             })
     })
 }
