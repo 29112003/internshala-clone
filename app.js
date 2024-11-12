@@ -25,9 +25,14 @@ app.use(session({
 // we generate an string in backend and save it broswer and jab tak cookie broswer mai save hai tak person login rahega
 app.use(cookieParser());
 
+//express file-upload
+
+const fileupload = require("express-fileupload");
+app.use(fileupload());
 // routes
 
-app.use('/', require("./routes/indexRouters"));
+app.use('/user', require("./routes/indexRouters"));
+app.use('/resume', require("./routes/resumeRouters"));
 
 
 // error handling
