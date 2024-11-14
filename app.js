@@ -29,6 +29,7 @@ app.use(cookieParser());
 
 const fileupload = require("express-fileupload");
 app.use(fileupload());
+
 // routes
 
 app.use('/user', require("./routes/indexRouters"));
