@@ -10,7 +10,7 @@ const logger = require("morgan");
 app.use(logger("tiny"))
 
 // body parser 
-app.use(express.urlencoded({extended:false}));
+app.use(express.urlencoded({extended:true}));
 
 // session and cookie
 

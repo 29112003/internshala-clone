@@ -124,8 +124,8 @@ exports.employeavatar = catchAsyncErrors(async(req,res,next)=>{
       file : file.data,
       fileName : modifiedFileName
     })
-    Employe.organizationlogo = {fileId , url};
-    await Employe.save();
+    employe.organizationlogo = {fileId , url};
+    await employe.save();
     res.status(200).json({
       success : true,
       message : "employe Updated Successfully"
