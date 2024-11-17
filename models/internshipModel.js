@@ -2,6 +2,9 @@ const mongoose = require("mongoose");
 
 const internshipModel = new mongoose.Schema(
     {
+        employe : {
+            type : mongoose.Schema.Types.ObjectId, ref : "Employe",
+        },
         profile:String,
         skill : String,
         internshiptype : {type : String , enum : ["In office", "Remote"]},
@@ -17,12 +20,12 @@ const internshipModel = new mongoose.Schema(
             },
             amount : Number
         },
-        perkes : String,
+        perks : String,
         assesments : String,
     }, 
     {timestamps : true}
 )
 
-const Internship = mongoose.model("Internship", internshipModel);
+const Internship = mongoose.model("internship", internshipModel);
 
 module.exports = Internship;
