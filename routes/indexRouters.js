@@ -11,51 +11,76 @@ const {
   studentforgetlink,
   studentresetpassword,
   studentupdate,
-  studentavatar
+  studentavatar,
+  applyinternship,
+  applyjob
 } = require("../controllers/indexController");
 const { isAutheticated } = require("../middlewares/auth");
 
 // GET /
 
-router.get("/", isAutheticated, homepage);
+// router.get("/", isAutheticated, homepage);/''
 
 // POST /stduent
-router.post("/student", isAutheticated, currentUser);
+router.post("/", isAutheticated, currentUser);
 
 // POST  /student/signup
-router.post("/student/signup", studentsignup);
+router.post("/signup", studentsignup);
 
 // POST  /student/signin
-router.post("/student/signin", studentsignin);
+router.post("/signin", studentsignin);
 
 // GET  /student/signout
-router.get("/student/signout", isAutheticated, studentsignout);
+router.get("/signout", isAutheticated, studentsignout);
 
 // POST  /student/send-mail
-router.post("/student/send-mail", studentsendmail);
+router.post("/send-mail", studentsendmail);
 
 // get  /student/forget-link/:id
-router.get("/student/forget-link/:id", studentforgetlink);
+router.get("/forget-link/:id", studentforgetlink);
 
 // get  /student/reset-password/:id
 router.post(
-  "/student/reset-password/:id",
+  "/reset-password/:id",
   isAutheticated,
   studentresetpassword
 );
 
 // get  /student/update/:studentid
 router.post(
-  "/student/update/:id",
+  "/update/:id",
   isAutheticated,
   studentupdate
 );
 
 // get  /student/avatar/:studentid
 router.post(
-  "/student/avatar/:id",
+  "/avatar/:id",
   isAutheticated,
   studentavatar
 );
+
+//---------------------apply internship---------------------
+
+//POST  /student/apply/:internshipid
+
+router.post(
+  "/apply/internship/:internshipid",
+  isAutheticated,
+  applyinternship
+);
+
+//---------------------apply job---------------------
+
+//POST  /student/apply/:jobid
+
+router.post(
+  "/apply/job/:jobid",
+  isAutheticated,
+  applyjob
+);
+
+
+
 
 module.exports = router;

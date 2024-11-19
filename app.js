@@ -32,7 +32,7 @@ app.use(fileupload());
 
 // routes
 
-app.use('/user', require("./routes/indexRouters"));
+app.use('/student', require("./routes/indexRouters"));
 app.use('/resume', require("./routes/resumeRouters"));
 app.use('/employe', require("./routes/employeRouters.js"));
 
