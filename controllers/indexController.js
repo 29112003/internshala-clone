@@ -165,3 +165,23 @@ exports.applyjob = catchAsyncErrors(async(req,res,next)=>{
 })
 
 
+//-----------------------------soft delete----------------------
+
+exports.softDeleteStudent  = catchAsyncErrors(async(req,res,next)=>{
+  const  {studentId} = req.params;
+  const student = await Student.findById(studentId);
+
+  if(!student || student.isDeleted){
+    return res.status(404).json({message : "Student not found or already deleted"}); 
+  }
+  student.isDeleted  = true;
+
+  await student.save();
+  await Internship.updateMany({student : studentId }, {isDeleted : true});
+  await Job.updateMany({student : studentId} , {isDeleted : true});
+  
+  return res.status(200).json({message : "student soft-deleted successfully"})
+
+})
+
+

@@ -14,7 +14,7 @@ const {
   studentavatar,
   applyinternship,
   applyjob,
-  deleteStudent
+  softDeleteStudent
 } = require("../controllers/indexController");
 const { isAutheticated } = require("../middlewares/auth");
 
@@ -87,7 +87,7 @@ router.post(
 router.post(
   "/delete/:stuid",
   isAutheticated,
-  deleteStudent
+  softDeleteStudent
 );
 
 

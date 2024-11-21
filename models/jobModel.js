@@ -1,6 +1,14 @@
 const mongoose = require("mongoose");
 
-const jobModel = new mongoose.Schema(
+const excludeSoftDeleted = (schema) =>{
+  schema.pre(/^find/ , function (next){
+    this.where({isDeleted:false});
+    next();
+  })
+}
+
+
+const jobSchema = new mongoose.Schema(
   {
     students: [
       {
@@ -21,10 +29,13 @@ const jobModel = new mongoose.Schema(
     salary: Number,
     perks: String,
     assesments: String,
+    isDeleted : {type : Boolean , default : false}
   },
   { timestamps: true }
 );
 
-const Job = mongoose.model("job", jobModel);
+excludeSoftDeleted(jobSchema)
+
+const Job = mongoose.model("job", jobSchema );
 
 module.exports = Job;
