@@ -13,7 +13,8 @@ const {
   studentupdate,
   studentavatar,
   applyinternship,
-  applyjob
+  applyjob,
+  deleteStudent
 } = require("../controllers/indexController");
 const { isAutheticated } = require("../middlewares/auth");
 
@@ -78,6 +79,15 @@ router.post(
   "/apply/job/:jobid",
   isAutheticated,
   applyjob
+);
+//---------------------delete student---------------------
+
+//POST  /student/delete/:stuid
+
+router.post(
+  "/delete/:stuid",
+  isAutheticated,
+  deleteStudent
 );
 
 
