@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-const studentModel = new mongoose.Schema(
+const studentSchema = new mongoose.Schema(
   {
     firstname: {
       type: String,
@@ -81,11 +81,12 @@ const studentModel = new mongoose.Schema(
         ref: "job",
       },
     ],
+    isDeleted : {type : Boolean , default : false},
   },
   { timestamps: true }
 );
 
-studentModel.pre("save", function () {
+studentSchema.pre("save", function () {
   if (!this.isModified("password")) {
     return;
   }
@@ -94,17 +95,22 @@ studentModel.pre("save", function () {
   this.password = bcrypt.hashSync(this.password, salt);
 });
 
-studentModel.methods.comparepassword = function (password) {
+studentSchema.pre(/^find/,function (next){
+  this.where({isDeleted : false});
+  next();
+})
+
+studentSchema.methods.comparepassword = function (password) {
   return bcrypt.compareSync(password, this.password);
 };
 
 // to create login we need to create token
-studentModel.methods.getjwttoken = function () {
+studentSchema.methods.getjwttoken = function () {
   return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE,
   });
 };
 
-const Student = mongoose.model("student", studentModel);
+const Student = mongoose.model("student", studentSchema);
 
 module.exports = Student;

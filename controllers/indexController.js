@@ -165,23 +165,3 @@ exports.applyjob = catchAsyncErrors(async(req,res,next)=>{
 })
 
 
-//-----------------------------delete student----------------------
-
-exports.deleteStudent = catchAsyncErrors(async(req,res,next)=>{
-
-  const {stuid} = req.params;
-  const { id } = req;
-
-  if(stuid !== id){
-    return res.status(403).json({message : "Invalid user request"});
-  }
-
-    const deletedUser = await Student.findByIdAndDelete(id).exec();
-
-    if(!deletedUser){
-      return res.status(401).json({message : "Please login first"})
-    }
-    
-    return res.status(200).json({message : "User deleted successfully", deletedUser})
-
-})
