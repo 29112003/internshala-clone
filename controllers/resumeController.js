@@ -19,6 +19,7 @@ exports.resume =  catchAsyncErrors(async (req, res, next) => {
   exports.editeducation = catchAsyncErrors(async (req , res ,next)=>{
     const student = await Student.findById(req.id).exec();
     const eduIndex = student.resume.education.findIndex((i)=>i.id === req.params.eduid);
+    
     student.resume.education[eduIndex] = {
       ...student.resume.education[eduIndex],
       ...req.body

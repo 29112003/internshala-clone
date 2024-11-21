@@ -82,15 +82,13 @@ router.post(
 );
 //---------------------delete student---------------------
 
-//POST  /student/delete/:stuid
+//DELETE  /student/delete/:stuid
 
-router.post(
+router.delete;(
   "/delete/:stuid",
   isAutheticated,
   softDeleteStudent
 );
-
-
 
 
 module.exports = router;
