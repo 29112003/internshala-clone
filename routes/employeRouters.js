@@ -17,7 +17,8 @@ const {
   readsingleinternship,
   createjob,
   readjob,
-  readsinglejob
+  readsinglejob,
+  softDeleteEmploye
 } = require("../controllers/employeController");
 const { isAutheticated } = require("../middlewares/auth");
 
@@ -63,6 +64,18 @@ router.post(
   isAutheticated,
   employeavatar
 );
+
+//---------------------delete employe---------------------
+
+//DELETE  /employe/delete/:stuid
+
+router.delete(
+  "/delete/:empid",
+  isAutheticated,
+  softDeleteEmploye
+);
+
+
 
 //------------------------------internship---------------------------
 

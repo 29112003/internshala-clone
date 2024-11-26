@@ -1,13 +1,13 @@
 const mongoose = require("mongoose");
 
-const excludeSoftDeleted = (schema) =>{
-  schema.pre(/^find/ , function (next){
-    this.where({isDeleted:false});
+const excludeSoftDeleted = (schema) => {
+  schema.pre(/^find/, function (next) {
+    this.where({ isDeleted: false }); 
     next();
-  })
-}
+  });
+};
 
-const internshipSchema  = new mongoose.Schema(
+const internshipSchema = new mongoose.Schema(
   {
     students: [
       {
@@ -36,12 +36,24 @@ const internshipSchema  = new mongoose.Schema(
     },
     perks: String,
     assesments: String,
-    isDeleted : { type : Boolean , default : false},
+    isDeleted: { type: Boolean, default: false }, 
   },
   { timestamps: true }
 );
 
+
 excludeSoftDeleted(internshipSchema);
+
+internshipSchema.pre(/^find/, function (next) {
+  this.populate({
+    path: "employe",
+    match: { isDeleted: false },
+  }).populate({
+    path: "students",
+    match: { isDeleted: false },
+  });
+  next();
+});
 
 const Internship = mongoose.model("internship", internshipSchema);
 

@@ -134,6 +134,29 @@ exports.employeavatar = catchAsyncErrors(async(req,res,next)=>{
     })
 })
 
+// employe soft delete functionality
+
+
+
+//-----------------------------soft delete----------------------
+exports.softDeleteEmploye = catchAsyncErrors(async (req, res, next) => {
+  const { empid } = req.params;
+
+  const employe = await Employe.findById(empid);
+
+  if (!employe || employe.isDeleted) {
+    return res.status(404).json({ message: "Employee not found or already deleted" });
+  }
+
+  employe.isDeleted = true;
+  await employe.save();
+
+  await Internship.updateMany({ employe: empid }, { isDeleted: true });
+  await Job.updateMany({ employe: empid }, { isDeleted: true });
+
+  return res.json({ message: "Employee and related internships/jobs marked as deleted" });
+});
+
 //----------------------------------Internship-----------------------------------
 
  //internship created
