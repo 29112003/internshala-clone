@@ -84,7 +84,7 @@ router.post(
 
 //DELETE  /student/delete/:stuid
 
-router.delete;(
+router.delete(
   "/delete/:stuid",
   isAutheticated,
   softDeleteStudent

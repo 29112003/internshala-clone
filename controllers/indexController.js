@@ -142,6 +142,8 @@ exports.applyinternship = catchAsyncErrors(async(req,res,next)=>{
     req.params.internshipid
   ).exec();
 
+  console.log(student)
+
   student.internships.push(internship._id);
   internship.students.push(student._id);
   await student.save();
@@ -168,8 +170,8 @@ exports.applyjob = catchAsyncErrors(async(req,res,next)=>{
 //-----------------------------soft delete----------------------
 
 exports.softDeleteStudent  = catchAsyncErrors(async(req,res,next)=>{
-  const  {studentId} = req.params;
-  const student = await Student.findById(studentId);
+  const  {stuid} = req.params;
+  const student = await Student.findById(stuid);
 
   if(!student || student.isDeleted){
     return res.status(404).json({message : "Student not found or already deleted"}); 
@@ -177,10 +179,11 @@ exports.softDeleteStudent  = catchAsyncErrors(async(req,res,next)=>{
   student.isDeleted  = true;
 
   await student.save();
-  await Internship.updateMany({student : studentId }, {isDeleted : true});
-  await Job.updateMany({student : studentId} , {isDeleted : true});
+
+  await Internship.updateMany({student : stuid }, {isDeleted : true});
+  await Job.updateMany({student : stuid} , {isDeleted : true});
   
-  return res.status(200).json({message : "student soft-deleted successfully"})
+  return res.json({student});
 
 })
 
