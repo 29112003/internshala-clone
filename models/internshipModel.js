@@ -1,12 +1,5 @@
 const mongoose = require("mongoose");
 
-const excludeSoftDeleted = (schema) => {
-  schema.pre(/^find/, function (next) {
-    this.where({ isDeleted: false }); 
-    next();
-  });
-};
-
 const internshipSchema = new mongoose.Schema(
   {
     students: [
@@ -36,22 +29,22 @@ const internshipSchema = new mongoose.Schema(
     },
     perks: String,
     assesments: String,
-    isDeleted: { type: Boolean, default: false }, 
+    isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
 
-
-excludeSoftDeleted(internshipSchema);
-
+// Middleware for soft-deletion and population
 internshipSchema.pre(/^find/, function (next) {
-  this.populate({
-    path: "employe",
-    match: { isDeleted: false },
-  }).populate({
-    path: "students",
-    match: { isDeleted: false },
-  });
+  this.where({ isDeleted: false }) // Exclude soft-deleted documents
+    .populate({
+      path: "employe",
+      match: { isDeleted: false }, // Filter out soft-deleted employees
+    })
+    .populate({
+      path: "students",
+      match: { isDeleted: false }, // Filter out soft-deleted students
+    });
   next();
 });
 

@@ -207,6 +207,32 @@ exports.softDeleteEmploye = catchAsyncErrors(async (req, res, next) => {
   })
   
 })
+//---softdelete internship
+
+exports.softDeleteInternshipId = catchAsyncErrors(async (req, res, next) => {
+
+  const { internshipId } = req.params;
+  const internship =  await Internship.findById(internshipId);
+
+  if(!internship  || internship.isDeleted){
+    return res.status(404).json({message : "internship is not valid or marked deleted"})
+  }
+
+  const employeId = internship.employe; 
+
+  const loggedInEmploye = req.id
+
+  
+  if(employeId.toString() !== loggedInEmploye){
+    return res.status(403).json({message : "You are not authorized to delete this internship"});
+  }
+
+  internship.isDeleted = true;
+  await internship.save();
+
+  return res.status(200).json({ message: "the internship is successfully marked deleted"});
+});
+
 
 //--------------------------------------------------jobs---------------------------------------------------
 
