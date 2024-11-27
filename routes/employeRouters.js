@@ -19,7 +19,8 @@ const {
   readjob,
   readsinglejob,
   softDeleteEmploye,
-  softDeleteInternshipId
+  softDeleteInternshipId,
+  softDeleteJobId
 } = require("../controllers/employeController");
 const { isAutheticated } = require("../middlewares/auth");
 
@@ -140,5 +141,18 @@ router.post(
   isAutheticated,
   readsinglejob
 );
+
+
+
+//DELETE  /employe/delete/job/:jobId
+
+router.delete(
+  "/delete/job/:jobId",
+  isAutheticated,
+  softDeleteJobId
+);
+
+
+
 
 module.exports = router;

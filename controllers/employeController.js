@@ -207,6 +207,7 @@ exports.softDeleteEmploye = catchAsyncErrors(async (req, res, next) => {
   })
   
 })
+
 //---softdelete internship
 
 exports.softDeleteInternshipId = catchAsyncErrors(async (req, res, next) => {
@@ -284,3 +285,28 @@ exports.softDeleteInternshipId = catchAsyncErrors(async (req, res, next) => {
   })
   
 })
+
+
+exports.softDeleteJobId = catchAsyncErrors(async (req, res, next) => {
+  const { jobId } = req.params;
+
+  const job = await Job.findById(jobId);
+
+  if (!job || job.isDeleted) {
+    return res.status(404).json({ message: "Job not found or already marked deleted" });
+  }
+
+  const employeId = job.employe?.toString();
+  const loggedInEmploye = req.id; 
+
+  if (employeId !== loggedInEmploye) {
+    return res.status(403).json({ message: "You are not authorized to delete this job" });
+  }
+
+  job.isDeleted = true;
+  await job.save();
+
+  return res.status(200).json({ message: "The job has been successfully marked as deleted" });
+});
+
+

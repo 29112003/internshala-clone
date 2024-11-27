@@ -1,12 +1,13 @@
 const mongoose = require("mongoose");
 
-const excludeSoftDeleted = (schema) =>{
-  schema.pre(/^find/ , function (next){
-    this.where({isDeleted:false});
-    next();
-  })
-}
+// Soft-delete logic to exclude documents with isDeleted: true
 
+const excludeSoftDeleted = (schema) => {
+  schema.pre(/^find/, function (next) {
+    this.where({ isDeleted: false });
+    next();
+  });
+};
 
 const jobSchema = new mongoose.Schema(
   {
@@ -20,22 +21,71 @@ const jobSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Employe",
     },
-    title: String,
-    skill: String,
-    jobtype: { type: String, enum: ["In office", "Remote"] },
-    openings: Number,
-    description: String,
-    preferences: String,
-    salary: Number,
-    perks: String,
-    assesments: String,
-    isDeleted : {type : Boolean , default : false}
+    title: {
+      type: String,
+      required: [true, "Job title is required"],
+      trim: true,
+    },
+    skill: {
+      type: String,
+      required: [true, "Skill is required"],
+      trim: true,
+    },
+    jobtype: {
+      type: String,
+      enum: ["In office", "Remote"],
+      required: [true, "Job type is required"],
+    },
+    openings: {
+      type: Number,
+      default: 1,
+      min: [1, "There should be at least one opening"],
+    },
+    description: {
+      type: String,
+      trim: true,
+      default: "No description provided",
+    },
+    preferences: {
+      type: String,
+      trim: true,
+    },
+    salary: {
+      type: Number,
+      default: 0,
+    },
+    perks: {
+      type: String,
+      trim: true,
+    },
+    assessments: {
+      type: String,
+      trim: true,
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
 
-excludeSoftDeleted(jobSchema)
+// Apply soft-delete filter
+excludeSoftDeleted(jobSchema);
 
-const Job = mongoose.model("job", jobSchema );
+// Pre-hook to populate references
+jobSchema.pre(/^find/, function (next) {
+  this.populate({
+    path: "students",
+    match: { isDeleted: false },
+  }).populate({
+    path: "employe",
+    match: { isDeleted: false },
+  });
+  next();
+});
+
+
+const Job = mongoose.model("Job", jobSchema);
 
 module.exports = Job;
