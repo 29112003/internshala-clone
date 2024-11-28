@@ -3,24 +3,24 @@ const router = express.Router();
 
 const {
   homepage,
-  employesignup,
-  employesignin,
-  employesignout,
+  employeSignup,
+  employeSignin,
+  employeSignout,
   currentUser,
-  employesendmail,
-  employeforgetlink,
-  employeresetpassword,
-  employeupdate,
-  employeavatar,
-  createinternship,
-  readinternship,
-  readsingleinternship,
-  createjob,
-  readjob,
-  readsinglejob,
+  employeSendMail,
+  employeForgetLink,
+  employeResetPassword,
+  employeUpdate,
+  employeAvatar,
+  createInternship,
+  readInternship,
+  readSingleInternship,
+  createJob,
+  readJob,
+  readSingleJob,
   softDeleteEmploye,
-  softDeleteInternshipId,
-  softDeleteJobId
+  softDeleteInternship,
+  softDeleteJob
 } = require("../controllers/employeController");
 const { isAutheticated } = require("../middlewares/auth");
 
@@ -32,39 +32,39 @@ router.get("/", isAutheticated, homepage);
 router.get("/currentEmploye", isAutheticated, currentUser);
 
 // POST  /signup
-router.post("/signup", employesignup);
+router.post("/signup", employeSignup);
 
 // POST  /signin
-router.post("/signin", employesignin);
+router.post("/signin", employeSignin);
 
 // GET  /employe/signout
-router.get("/signout", isAutheticated, employesignout);
+router.get("/signout", isAutheticated, employeSignout);
 
 // POST  /send-mail
-router.post("/send-mail", employesendmail);
+router.post("/send-mail", employeSendMail);
 
 // get  /employe/forget-link/:id
-router.get("/forget-link/:id", employeforgetlink);
+router.get("/forget-link/:id", employeForgetLink);
 
 // get  /employe/reset-password/:id
 router.post(
   "/reset-password/:id",
   isAutheticated,
-  employeresetpassword
+  employeResetPassword
 );
 
 // get  /employe/update/:employeid
 router.post(
   "/update/:id",
   isAutheticated,
-  employeupdate
+  employeUpdate
 );
 
 // get  /employe/avatar/:employeid
 router.post(
   "/avatar/:id",
   isAutheticated,
-  employeavatar
+  employeAvatar
 );
 
 //---------------------delete employe---------------------
@@ -86,7 +86,7 @@ router.delete(
 router.post(
   "/internship/create",
   isAutheticated,
-  createinternship
+  createInternship
 );
 
 // POST /employe/internship/read
@@ -94,7 +94,7 @@ router.post(
 router.post(
   "/internship/read",
   isAutheticated,
-  readinternship
+  readInternship
 );
 
 // POST /employe/internship/read/:id
@@ -102,7 +102,7 @@ router.post(
 router.post(
   "/internship/read/:id",
   isAutheticated,
-  readsingleinternship
+  readSingleInternship
 );
 
 
@@ -111,7 +111,7 @@ router.post(
 router.delete(
   "/delete/internship/:internshipId",
   isAutheticated,
-  softDeleteInternshipId
+  softDeleteInternship
 );
 
 
@@ -123,7 +123,7 @@ router.delete(
 router.post(
   "/job/create",
   isAutheticated,
-  createjob
+  createJob
 );
 
 // POST /employe/job/read
@@ -131,7 +131,7 @@ router.post(
 router.post(
   "/job/read",
   isAutheticated,
-  readjob
+  readJob
 );
 
 // POST /employe/job/read/:id
@@ -139,7 +139,7 @@ router.post(
 router.post(
   "/job/read/:id",
   isAutheticated,
-  readsinglejob
+  readSingleJob
 );
 
 
@@ -149,7 +149,7 @@ router.post(
 router.delete(
   "/delete/job/:jobId",
   isAutheticated,
-  softDeleteJobId
+  softDeleteJob
 );
 
 

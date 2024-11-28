@@ -19,6 +19,7 @@ exports.currentUser = catchAsyncErrors(async (req, res, next) => {
 
 exports.studentsignup = catchAsyncErrors(async (req, res, next) => {
   const student = await new Student(req.body).save();
+  const token = student.generateAuthToken(); 
   sendtoken(student , 201 , res)
   // res.status(201).json(student);
 });

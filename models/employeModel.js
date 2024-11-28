@@ -1,41 +1,39 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-
-const employeModel = new mongoose.Schema(
+const {generateToken  } = require("../utils/jwtHelper")
+// Mongoose Employee Schema
+const employeeSchema = new mongoose.Schema(
   {
     firstname: {
       type: String,
       required: [true, "First Name is required"],
-      minLength: [4, "First name should be atleast 4 character long"],
+      minLength: [4, "First name should be at least 4 characters long"],
     },
     lastname: {
       type: String,
       required: [true, "Last Name is required"],
-      minLength: [4, "Last name should be atleast 4 character long"],
+      minLength: [4, "Last name should be at least 4 characters long"],
     },
     contact: {
       type: String,
       required: [true, "Contact is required"],
       maxLength: [10, "Contact must not exceed 10 characters"],
-      minLength: [10, "Contact should be atleast 10 characters long"],
+      minLength: [10, "Contact should be at least 10 characters long"],
     },
     email: {
       type: String,
       required: [true, "Email is required"],
       unique: true,
-      match: [
-        /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-        "Please provide a valid email address",
-      ],
       lowercase: true,
-      trim: true, 
+      trim: true,
+      match: [/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "Please provide a valid email address"],
     },
     password: {
       type: String,
+      required: true,
       select: false,
-      maxLength: [15, "Password should not exceed more than 15 characters"],
-      minLength: [6, "Password should have atleast 6 characters"],
+      maxLength: [15, "Password should not exceed 15 characters"],
+      minLength: [6, "Password should have at least 6 characters"],
     },
     resetPasswordToken: {
       type: String,
@@ -44,25 +42,25 @@ const employeModel = new mongoose.Schema(
     organizationname: {
       type: String,
       required: [true, "Organization Name is required"],
-      minLength: [4, "Organization name should be atleast 4 characters long"],
+      minLength: [4, "Organization name should be at least 4 characters long"],
     },
     organizationlogo: {
       type: Object,
       default: {
         fileId: "",
-        url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8dXNlcnxlbnwwfHwwfHx8MA%3D%3D",
+        url: "https://defaultlogo.com/logo.png", // default URL
       },
     },
     internships: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "internship",
+        ref: "Internship",
       },
     ],
     jobs: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "job",
+        ref: "Job",
       },
     ],
     isDeleted: { type: Boolean, default: false },
@@ -70,36 +68,37 @@ const employeModel = new mongoose.Schema(
   { timestamps: true }
 );
 
-employeModel.pre("save", function () {
-  if (!this.isModified("password")) {
-    return;
-  }
-
-  let salt = bcrypt.genSaltSync(10);
-  this.password = bcrypt.hashSync(this.password, salt);
+// Hash password before saving
+employeeSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
 });
 
-
-employeModel.methods.comparepassword = function (password) {
-  return bcrypt.compareSync(password, this.password);
+// Compare password
+employeeSchema.methods.comparePassword = function (password) {
+  return bcrypt.compare(password, this.password);
 };
 
-employeModel.methods.getjwttoken = function () {
-  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE,
-  });
+// Generate JWT token
+
+employeeSchema.methods.generateAuthToken = function () {
+  return generateToken(this._id);  // Use the new generateToken function
 };
 
-employeModel.methods.softDelete = function () {
+// Soft delete
+employeeSchema.methods.softDelete = function () {
   this.isDeleted = true;
   return this.save();
 };
 
-employeModel.pre(/^find/, function (next) {
-  this.where({ isDeleted: false }); 
+// Pre-query hook to prevent fetching deleted records
+employeeSchema.pre(/^find/, function (next) {
+  this.where({ isDeleted: false });
   next();
 });
 
-const Employe = mongoose.model("Employe", employeModel);
+// Export Mongoose Model
+const Employee = mongoose.model("Employe", employeeSchema);
 
-module.exports = Employe;
+module.exports = Employee;

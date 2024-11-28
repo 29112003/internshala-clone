@@ -1,6 +1,6 @@
 const nodemailer = require("nodemailer");
 
-exports.sendmail = (req,res,next,url) =>{
+exports.sendMail = (req,res,next,url) =>{
     const transport = nodemailer.createTransport({
         service: "gmail",
         host : "smtp.gmail.com",

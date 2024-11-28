@@ -1,151 +1,125 @@
 const { catchAsyncErrors } = require("../middlewares/catchAsyncErrors");
 const Employe = require("../models/employeModel");
+const { passwordStrengthSchema } = require("../utils/passwordHelper");
+const { validateEmploye } = require("../validation/employeeValidation");
 const ErrorHandler = require("../utils/errorHandler");
-const { sendmail } = require("../utils/nodemailer");
-const { sendtoken } = require("../utils/sendToken");
+const { sendMail } = require("../utils/nodemailer");
+const { sendToken } = require("../utils/sendToken");
 const imageKit = require("../utils/imageKit").initImageKit();
-const path = require("path")
-const Internship = require("../models/internshipModel")
-const Job = require("../models/jobModel")
+const path = require("path");
+const Internship = require("../models/internshipModel");
+const Job = require("../models/jobModel");
 
-exports.homepage = catchAsyncErrors(async (req, res, next) => {
-  res.json({ message: "suraksikt employe home page" });
+// Home route
+exports.homepage = catchAsyncErrors(async (req, res) => {
+  res.json({ message: "Employe home page" });
 });
 
-exports.currentUser = catchAsyncErrors(async (req, res, next) => {
+// Get current logged-in employe
+exports.currentUser = catchAsyncErrors(async (req, res) => {
   const employe = await Employe.findById(req.id).exec();
-  res.json({employe})
+  res.json({ employe });
 });
 
-exports.employesignup = catchAsyncErrors(async (req, res, next) => {
+// Employe signup
+exports.employeSignup = catchAsyncErrors(async (req, res) => {
+  const { error } = validateEmploye(req.body);
+  if (error) return res.status(400).json({ errors: error.details.map(err => err.message) });
+
+  const { password } = req.body;
+  const { error: passwordError } = passwordStrengthSchema.validate({ password });
+  if (passwordError) return res.status(400).json({ error: passwordError.details[0].message });
+
   const employe = await new Employe(req.body).save();
-  sendtoken(employe , 201 , res)
-  // res.status(201).json(student);
+  const token = employe.generateAuthToken(); 
+  sendToken(employe, 200, res);
 });
 
-exports.employesignin = catchAsyncErrors(async (req, res, next) => {
-  const employe = await Employe.findOne({ email: req.body.email })
-    .select("+password")
-    .exec();
-  if (!employe)
-    return next(
-      new ErrorHandler("User not found with this email address", 404)
-    );
+// Employe signin
+exports.employeSignin = catchAsyncErrors(async (req, res, next) => {
+  const employe = await Employe.findOne({ email: req.body.email }).select("+password").exec();
+  if (!employe) return next(new ErrorHandler("Employe not found with this email address", 404));
 
-  const isMatch = employe.comparepassword(req.body.password);
+  const isMatch = await employe.comparePassword(req.body.password);
+  if (!isMatch) return next(new ErrorHandler("Invalid credentials", 400));
 
-  if (!isMatch) {
-    return next(new ErrorHandler("Wrong Credientials", 500));
-  }
-
-  sendtoken(employe , 200 , res)
-
-  
-  // res.json(student);
+  sendToken(employe, 200, res);
 });
 
-exports.employesignout = catchAsyncErrors(async (req, res, next) => {
+// Employe signout
+exports.employeSignout = catchAsyncErrors(async (req, res) => {
   res.clearCookie("token");
-  res.json({message : "Successfully signout!"});
+  res.json({ message: "Successfully signed out!" });
 });
 
+// Send reset password email
+exports.employeSendMail = catchAsyncErrors(async (req, res, next) => {
+  const employe = await Employe.findOne({ email: req.body.email }).exec();
+  if (!employe) return next(new ErrorHandler("Employe not found with this email address", 404));
 
-exports.employesendmail = catchAsyncErrors(async (req, res, next) => {
-  const employe = await Employe.findOne({email : req.body.email}).exec();
-  if(!employe){
-    return next(
-      new ErrorHandler("User not found with this email address", 404)
-    );
-  }
-  const url = `${req.protocol}://${req.get("host")}/employe/forget-link/${employe.id}`
-
-  sendmail(req,res,next,url);
+  const url = `${req.protocol}://${req.get("host")}/employe/forget-link/${employe.id}`;
+  sendMail(req, res, next, url);
 
   employe.resetPasswordToken = "1";
-
   await employe.save();
-  res.json({employe, url});
-  
+  res.json({ employe, url });
 });
 
-
-exports.employeforgetlink = catchAsyncErrors(async(req,res,next)=>{
+// Reset password using the token
+exports.employeForgetLink = catchAsyncErrors(async (req, res, next) => {
   const employe = await Employe.findById(req.params.id).exec();
-  if(!employe){
-    return next(
-      new ErrorHandler("User not found with this email address", 404)
-    );
+  if (!employe || employe.resetPasswordToken !== "1") return next(new ErrorHandler("Invalid or expired reset link", 400));
+
+  employe.resetPasswordToken = "0";
+  employe.password = req.body.password;
+  await employe.save();
+
+  res.status(200).json({ message: "Password reset successfully" });
+});
+
+// Update employe password
+exports.employeResetPassword = catchAsyncErrors(async (req, res) => {
+  const employe = await Employe.findById(req.id).exec();
+  employe.password = req.body.password;
+  await employe.save();
+
+  res.status(200).json({ message: "Password updated successfully" });
+});
+
+// Update employe details
+exports.employeUpdate = catchAsyncErrors(async (req, res) => {
+  const { error } = validateEmploye(req.body);
+  if (error) return res.status(400).json({ errors: error.details.map(err => err.message) });
+
+  const employe = await Employe.findByIdAndUpdate(req.params.id, req.body).exec();
+  await employe.save();
+  res.status(200).json({ success: true, message: "Employe updated successfully", employe });
+});
+
+// Update employe avatar
+exports.employeAvatar = catchAsyncErrors(async (req, res) => {
+  const employe = await Employe.findById(req.params.id).exec();
+  const file = req.files.organizationLogo;
+
+  const modifiedFileName = `resumebuilder-${Date.now()}${path.extname(file.name)}`;
+  if (employe.organizationLogo.fileId) {
+    await imageKit.deleteFile(employe.organizationLogo.fileId);
   }
-  if(employe.resetPasswordToken == "1"){
-    employe.resetPasswordToken = "0";
-    employe.password = req.body.password;
-    await employe.save();
-  }else{
-    return next(
-      new ErrorHandler("Invalid reset password link! Please try again", 500)
-    );
-  }
-  res.status(200).json({message : "password reset successfully"})
 
-})
+  const { fileId, url } = await imageKit.upload({ file: file.data, fileName: modifiedFileName });
+  employe.organizationLogo = { fileId, url };
+  await employe.save();
 
-exports.employeresetpassword = catchAsyncErrors(async(req,res,next)=>{
-  
-    const employe = await Employe.findById(req.id).exec();
-    employe.password = req.body.password;
-    await employe.save();
-  res.status(200).json({message : "password reset successfully"})
+  res.status(200).json({ success: true, message: "Employe avatar updated successfully" });
+});
 
-})
-
-exports.employeupdate = catchAsyncErrors(async(req,res,next)=>{
-  
-    const employe = await Employe.findByIdAndUpdate(req.params.id , req.body).exec();
-    await employe.save()
-    res.status(200).json({
-      success:true,
-      // employe,
-      message:"employe  updated successfully!"
-    })
-    
-})
-
-exports.employeavatar = catchAsyncErrors(async(req,res,next)=>{
-    const employe = await Employe.findById(req.params.id).exec();
-    const file = req.files.organizationlogo;
-    console.log(file)
-    const modifiedFileName = `resumebuilder-${Date.now()}${path.extname(
-      file.name
-    )}`
-
-    if(employe.organizationlogo.fileId !== ""){
-      await imageKit.deleteFile(employe.organizationlogo.fileId);
-    }
-
-    const {fileId , url } = await imageKit.upload({
-      file : file.data,
-      fileName : modifiedFileName
-    })
-    employe.organizationlogo = {fileId , url};
-    await employe.save();
-    res.status(200).json({
-      success : true,
-      message : "employe Updated Successfully"
-    })
-})
-
-// employe soft delete functionality
-
-
-
-//-----------------------------soft delete----------------------
-exports.softDeleteEmploye = catchAsyncErrors(async (req, res, next) => {
+// Soft delete employe
+exports.softDeleteEmploye = catchAsyncErrors(async (req, res) => {
   const { empid } = req.params;
-
   const employe = await Employe.findById(empid);
 
   if (!employe || employe.isDeleted) {
-    return res.status(404).json({ message: "Employee not found or already deleted" });
+    return res.status(404).json({ message: "Employe not found or already deleted" });
   }
 
   employe.isDeleted = true;
@@ -154,48 +128,39 @@ exports.softDeleteEmploye = catchAsyncErrors(async (req, res, next) => {
   await Internship.updateMany({ employe: empid }, { isDeleted: true });
   await Job.updateMany({ employe: empid }, { isDeleted: true });
 
-  return res.json({ message: "Employee and related internships/jobs marked as deleted" });
+  res.json({ message: "Employe and related internships/jobs marked as deleted" });
 });
 
-//----------------------------------Internship-----------------------------------
+// Create internship
+exports.createInternship = catchAsyncErrors(async (req, res) => {
+  const internship = await new Internship(req.body);
+  const employe = await Employe.findById(req.id).exec();
 
- //internship created
- exports.createinternship = catchAsyncErrors(async(req,res,next)=>{
-   
-   const internship = await new Internship(req.body);
-   const employe = await Employe.findById(req.id).exec();
+  internship.employe = employe._id;
+  employe.internships.push(internship._id);
 
-   internship.employe = employe._id;
-   
-   
-   employe.internships.push(internship._id);
+  await internship.save();
+  await employe.save();
 
-   await internship.save();
-   await employe.save();
+  res.status(201).json({ success: true, internship });
+});
+
+// read all internship 
+
+exports.readInternship = catchAsyncErrors(async(req,res,next)=>{
+
+  const {internships} = await Employe.findById(req.id).populate("internships").exec();
    
-   res.status(201).json({
+   res.status(200).json({
      success:true,
-     internship,
-    })
-    
-  })
-  
-  //internship read all
-  
-  exports.readinternship = catchAsyncErrors(async(req,res,next)=>{
+     internships,
+   })
+   
+ })
 
-   const {internships} = await Employe.findById(req.id).populate("internships").exec();
-    
-    res.status(200).json({
-      success:true,
-      internships,
-    })
-    
-  })
-  
-  //internship read one
-  
-  exports.readsingleinternship = catchAsyncErrors(async(req,res,next)=>{
+//readSingleInternship
+
+exports.readSingleInternship = catchAsyncErrors(async(req,res,next)=>{
     
   const internship = await Internship.findById(req.params.id).exec();
 
@@ -208,72 +173,53 @@ exports.softDeleteEmploye = catchAsyncErrors(async (req, res, next) => {
   
 })
 
-//---softdelete internship
-
-exports.softDeleteInternshipId = catchAsyncErrors(async (req, res, next) => {
-
+// Soft delete internship
+exports.softDeleteInternship = catchAsyncErrors(async (req, res) => {
   const { internshipId } = req.params;
-  const internship =  await Internship.findById(internshipId);
+  const internship = await Internship.findById(internshipId);
 
-  if(!internship  || internship.isDeleted){
-    return res.status(404).json({message : "internship is not valid or marked deleted"})
+  if (!internship || internship.isDeleted) {
+    return res.status(404).json({ message: "Internship not found or already deleted" });
   }
 
-  const employeId = internship.employe; 
-
-  const loggedInEmploye = req.id
-
-  
-  if(employeId.toString() !== loggedInEmploye){
-    return res.status(403).json({message : "You are not authorized to delete this internship"});
+  const employeId = internship.employe.toString();
+  if (employeId !== req.id) {
+    return res.status(403).json({ message: "You are not authorized to delete this internship" });
   }
 
   internship.isDeleted = true;
   await internship.save();
 
-  return res.status(200).json({ message: "the internship is successfully marked deleted"});
+  res.status(200).json({ message: "Internship marked as deleted" });
+});
+
+// Create job
+exports.createJob = catchAsyncErrors(async (req, res) => {
+  const job = await new Job(req.body);
+  const employe = await Employe.findById(req.id).exec();
+
+  job.employe = employe._id;
+  employe.jobs.push(job._id);
+
+  await job.save();
+  await employe.save();
+
+  res.status(201).json({ success: true, job });
 });
 
 
-//--------------------------------------------------jobs---------------------------------------------------
+exports.readJob = catchAsyncErrors(async(req,res,next)=>{
 
- //job created
- exports.createjob = catchAsyncErrors(async(req,res,next)=>{
+  const {jobs} = await Employe.findById(req.id).populate("jobs").exec();
    
-   const job = await new Job(req.body);
-   const employe = await Employe.findById(req.id).exec();
-
-   job.employe = employe._id;
-   
-   
-   employe.jobs.push(job._id);
-
-   await job.save();
-   await employe.save();
-   
-   res.status(201).json({
+   res.status(200).json({
      success:true,
-     job,
-    })
-    
-  })
-  
-  //job read all
-  
-  exports.readjob = catchAsyncErrors(async(req,res,next)=>{
+     jobs,
+   })
+   
+ })
 
-   const {jobs} = await Employe.findById(req.id).populate("jobs").exec();
-    
-    res.status(200).json({
-      success:true,
-      jobs,
-    })
-    
-  })
-  
-  //job read one
-  
-  exports.readsinglejob = catchAsyncErrors(async(req,res,next)=>{
+ exports.readSingleJob = catchAsyncErrors(async(req,res,next)=>{
     
   const job = await Job.findById(req.params.id).exec();
 
@@ -286,27 +232,22 @@ exports.softDeleteInternshipId = catchAsyncErrors(async (req, res, next) => {
   
 })
 
-
-exports.softDeleteJobId = catchAsyncErrors(async (req, res, next) => {
+// Soft delete job
+exports.softDeleteJob = catchAsyncErrors(async (req, res) => {
   const { jobId } = req.params;
-
   const job = await Job.findById(jobId);
 
   if (!job || job.isDeleted) {
-    return res.status(404).json({ message: "Job not found or already marked deleted" });
+    return res.status(404).json({ message: "Job not found or already deleted" });
   }
 
-  const employeId = job.employe?.toString();
-  const loggedInEmploye = req.id; 
-
-  if (employeId !== loggedInEmploye) {
+  const employeId = job.employe.toString();
+  if (employeId !== req.id) {
     return res.status(403).json({ message: "You are not authorized to delete this job" });
   }
 
   job.isDeleted = true;
   await job.save();
 
-  return res.status(200).json({ message: "The job has been successfully marked as deleted" });
+  res.status(200).json({ message: "Job marked as deleted" });
 });
-
-
