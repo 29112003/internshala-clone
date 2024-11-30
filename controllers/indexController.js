@@ -1,6 +1,7 @@
 const { catchAsyncErrors } = require("../middlewares/catchAsyncErrors");
 const Student = require("../models/studentModel");
 const Internship = require("../models/internshipModel");
+const {validateStudent} = require("../validation/studentValidation")
 const Job = require("../models/jobModel");
 const ErrorHandler = require("../utils/errorHandler");
 const { sendmail } = require("../utils/nodemailer");
@@ -17,11 +18,52 @@ exports.currentUser = catchAsyncErrors(async (req, res, next) => {
   res.json({student})
 });
 
+
 exports.studentsignup = catchAsyncErrors(async (req, res, next) => {
+  // Validate the incoming request body
+  const { error } = validateStudent(req.body);
+  if (error) {
+    return res.status(400).json({
+      success: false,
+      errors: error.details.map((err) => err.message),
+    });
+  }
+
+  // Check if the email already exists
+  const existingStudentByEmail = await Student.findOne({ email: req.body.email });
+  if (existingStudentByEmail) {
+    return res.status(400).json({
+      success: false,
+      message: "Email is already registered",
+    });
+  }
+
+  // Check if the contact number already exists
+  const existingStudentByContact = await Student.findOne({ contact: req.body.contact });
+  if (existingStudentByContact) {
+    return res.status(400).json({
+      success: false,
+      message: "Contact number is already registered",
+    });
+  }
+
+  // Check if the password is already used (if this requirement is strict)
+  const existingStudentByPassword = await Student.findOne({ password: req.body.password });
+  if (existingStudentByPassword) {
+    return res.status(400).json({
+      success: false,
+      message: "Password has been used already. Choose a different one.",
+    });
+  }
+
+  // Create a new student document
   const student = await new Student(req.body).save();
-  const token = student.generateAuthToken(); 
-  sendToken(student , 201 , res)
-  // res.status(201).json(student);
+
+  // Generate token
+  const token = student.generateAuthToken();
+
+  // Send the token with the response
+  sendToken(student, 201, res);
 });
 
 exports.studentsignin = catchAsyncErrors(async (req, res, next) => {

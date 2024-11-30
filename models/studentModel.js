@@ -18,6 +18,7 @@ const studentSchema = new mongoose.Schema(
     },
     contact: {
       type: String,
+      unique: true,
       required: [true, "Contact number is required"],
       validate: {
         validator: function (v) {
@@ -51,6 +52,7 @@ const studentSchema = new mongoose.Schema(
     password: {
       type: String,
       select: false,
+      unique: true,
       minLength: [8, "Password must be at least 8 characters long"],
       validate: {
         validator: function (v) {
