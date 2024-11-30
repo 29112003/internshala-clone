@@ -4,7 +4,7 @@ const Internship = require("../models/internshipModel");
 const Job = require("../models/jobModel");
 const ErrorHandler = require("../utils/errorHandler");
 const { sendmail } = require("../utils/nodemailer");
-const { sendtoken } = require("../utils/sendToken");
+const { sendToken } = require("../utils/sendToken");
 const imageKit = require("../utils/imageKit").initImageKit();
 const path = require("path")
 
@@ -20,7 +20,7 @@ exports.currentUser = catchAsyncErrors(async (req, res, next) => {
 exports.studentsignup = catchAsyncErrors(async (req, res, next) => {
   const student = await new Student(req.body).save();
   const token = student.generateAuthToken(); 
-  sendtoken(student , 201 , res)
+  sendToken(student , 201 , res)
   // res.status(201).json(student);
 });
 

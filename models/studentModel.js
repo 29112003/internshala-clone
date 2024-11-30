@@ -1,52 +1,64 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const {generateToken  } = require("../utils/jwtHelper")
+const { generateToken } = require("../utils/jwtHelper");
 
 const studentSchema = new mongoose.Schema(
   {
     firstname: {
       type: String,
       required: [true, "First Name is required"],
-      minLength: [4, "First name should be atleast 4 character long"],
+      minLength: [4, "First Name must be at least 4 characters long"],
+      trim: true,
     },
     lastname: {
       type: String,
-      required: [true, "last Name is required"],
-      minLength: [4, "last name should be atleast 4 character long"],
+      required: [true, "Last Name is required"],
+      minLength: [4, "Last Name must be at least 4 characters long"],
+      trim: true,
     },
     contact: {
       type: String,
-      required: [true, "contact is required"],
-      maxLenght: [10, "contact must not exceed 10 character"],
-      minLength: [10, "contact should be atleast 10 character long"],
+      required: [true, "Contact number is required"],
+      validate: {
+        validator: function (v) {
+          return /^[0-9]{10}$/.test(v); // Ensures exactly 10 digits
+        },
+        message: "Contact number must be a valid 10-digit number",
+      },
     },
     city: {
       type: String,
       required: [true, "City Name is required"],
-      minLength: [3, "city should be atleast 3 character long"],
+      minLength: [3, "City Name must be at least 3 characters long"],
+      trim: true,
     },
     gender: {
       type: String,
       enum: ["Male", "Female", "Others"],
+      required: [true, "Gender is required"],
     },
     email: {
       type: String,
       required: [true, "Email is required"],
-      unique: true, // Ensures the email is unique in the collection
+      unique: true,
+      lowercase: true,
+      trim: true,
       match: [
         /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
         "Please provide a valid email address",
-      ], // Improved email validation regex
-      lowercase: true, // Converts email to lowercase before saving
-      trim: true, // Trims any leading or trailing spaces
+      ],
     },
     password: {
       type: String,
       select: false,
-      maxLength: [15, "Password should not exceed more than 15 characters"],
-      minLength: [6, "Password should have atleast 6 characters"],
-      // match
+      minLength: [8, "Password must be at least 8 characters long"],
+      validate: {
+        validator: function (v) {
+          return /^(?=.*[A-Z])(?=.*\d)(?=.*[a-z]).{8,15}$/.test(v);
+        },
+        message:
+          "Password must have at least one uppercase letter, one number, and one lowercase letter",
+      },
     },
     resetPasswordToken: {
       type: String,
@@ -60,56 +72,60 @@ const studentSchema = new mongoose.Schema(
       },
     },
     resume: {
-      education: [],
-      jobs: [],
-      internship: [],
-      extraCurricularActiveties: [],
-      responsibilities: [],
-      courses: [],
-      projects: [],
-      skills: [],
-      accomplishments: [],
+      education: [{ type: String }],
+      jobs: [{ type: String }],
+      internships: [{ type: String }],
+      extraCurricularActivities: [{ type: String }],
+      responsibilities: [{ type: String }],
+      courses: [{ type: String }],
+      projects: [{ type: String }],
+      skills: [{ type: String }],
+      accomplishments: [{ type: String }],
     },
     internships: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "internship",
+        ref: "Internship",
       },
     ],
     jobs: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "job",
+        ref: "Job",
       },
     ],
-    isDeleted : {type : Boolean , default : false},
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
 
-studentSchema.pre("save", function () {
-  if (!this.isModified("password")) {
-    return;
-  }
-
-  let salt = bcrypt.genSaltSync(10);
-  this.password = bcrypt.hashSync(this.password, salt);
+// Pre-save middleware to hash the password
+studentSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  this.password = await bcrypt.hash(this.password, 10);
+  next();
 });
 
-studentSchema.pre(/^find/,function (next){
-  this.where({isDeleted : false});
+// Pre-query middleware to exclude soft-deleted records
+studentSchema.pre(/^find/, function (next) {
+  this.where({ isDeleted: false });
   next();
-})
+});
 
-studentSchema.methods.comparepassword = function (password) {
-  return bcrypt.compareSync(password, this.password);
+// Method to compare passwords
+studentSchema.methods.comparePassword = async function (password) {
+  return bcrypt.compare(password, this.password);
 };
 
-// to create login we need to create token
+// Method to generate a JWT token
 studentSchema.methods.generateAuthToken = function () {
-  return generateToken(this._id);  // Use the new generateToken function
+  return generateToken(this._id); // Uses the helper function to generate token
 };
 
-const Student = mongoose.model("student", studentSchema);
+// Export the Student model
+const Student = mongoose.model("Student", studentSchema);
 
 module.exports = Student;
