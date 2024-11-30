@@ -31,7 +31,7 @@ exports.employeSignup = catchAsyncErrors(async (req, res) => {
   if (passwordError) return res.status(400).json({ error: passwordError.details[0].message });
 
   const employe = await new Employe(req.body).save();
-  const token = employe.generateAuthToken(); 
+  
   sendToken(employe, 200, res);
 });
 
